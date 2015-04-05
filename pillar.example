@@ -1,4 +1,22 @@
 salt:
+  # Set this to true to clean any non-salt-formula managed files out of
+  # /etc/salt/{master,minion}.d ... You really don't want to do this on 2015.2
+  # and up as it'll wipe out important files that Salt relies on.
+  clean_config_d_dir: False
+
+  # Set this to False to not have the formula install packages (in the case you
+  # install Salt via git/pip/etc.)
+  install_packages: True
+
+  # to overwrite map.jinja salt packages
+  lookup:
+    salt-master: 'salt-master'
+    salt-minion: 'salt-minion'
+    salt-syndic: 'salt-syndic'
+    salt-cloud: 'salt-cloud'
+    salt-ssh: 'salt-ssh'
+
+  # salt master config
   master:
     fileserver_backend:
       - git
@@ -9,8 +27,26 @@ salt:
     file_roots:
       base:
         - /srv/salt
+
+    # for salt-api with tornado rest interface
+    rest_tornado:
+      port: 8000
+      ssl_crt: /etc/pki/api/certs/server.crt
+      ssl_key: /etc/pki/api/certs/server.key
+      debug: False
+      disable_ssl: False
+
+  # salt minion config:
   minion:
+
+    # single master setup
     master: salt
+
+    # multi master setup
+    master:
+      - salt_master_1
+      - salt_master_2
+
     fileserver_backend:
       - git
       - roots
@@ -29,6 +65,17 @@ salt:
       test.baz:
         spam: sausage
         cheese: bread
+
+    # salt mine setup
+    mine_interval: 60
+    # mine_functions can be set at the top level of the pillar, and
+    # that is preferable because it doesn't affect the conf file and
+    # doesn't require a minion restart. However, you can configure it
+    # here instead if you really want to.
+    mine_functions:
+      network.interface_ip: [eth0]
+
+  # salt cloud config
   cloud:
     master: salt
     folders:
